@@ -15,6 +15,7 @@ def make_si(pr_name,customer):
     for row in pr.items:
         income_account = frappe.db.get_value("Company", pr.company,"default_income_account")
         cost_center = frappe.db.get_value("Company", pr.company,"cost_center")
+        rate = row.rate
         if row.igst_amount:
             rate = (row.rate+row.igst_amount)
         if row.cgst_amount:
