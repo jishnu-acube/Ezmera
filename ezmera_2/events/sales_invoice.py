@@ -1,27 +1,33 @@
 import frappe
 from frappe.model.mapper import get_mapped_doc
-
+from frappe.utils import  nowdate
 @frappe.whitelist()
-def create_sales_invoice(source_name, target_doc=None):
-    doc = get_mapped_doc(
-        "Purchase Receipt",
-        source_name,
-        {
-            "Purchase Receipt": {
-                "doctype": "Sales Invoice",
-                "field_map": {
-                    "posting_date": "posting_date"
-                }
-            },
-            "Purchase Receipt Item": {
-                "doctype": "Sales Invoice Item",
-                "field_map": {
-                    "rate": "rate",
-                    "amount": "amount"
-                }
-            }
-        },
-        target_doc
-    )
+def make_si(pr_name,customer):
+    pr = frappe.get_doc("Purchase Receipt", pr_name)
 
-    return doc
+    si = frappe.new_doc("Sales Invoice")
+    si.due_date = nowdate()
+    si.customer = customer
+    # remove taxes
+    si.ignore_pricing_rule = 1
+    si.taxes_and_charges = ""
+    # copy items manually
+    for row in pr.items:
+        income_account = frappe.db.get_value("Company", pr.company,"default_income_account")
+        cost_center = frappe.db.get_value("Company", pr.company,"cost_center")
+        if row.igst_amount:
+            rate = (row.rate+row.igst_amount)
+        if row.cgst_amount:
+            rate = (row.rate+row.cgst_amount)
+
+        si.append("items", {
+            "item_code": row.item_code,
+            "item_name": row.item_name,
+            "qty": row.qty,
+            "rate":  rate* 1.01,
+            "uom": row.uom,
+            "income_account": income_account,
+            "cost_center": cost_center,            
+        })
+    si.save()
+    return si
