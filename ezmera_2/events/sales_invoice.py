@@ -19,7 +19,7 @@ def make_si(pr_name,customer):
         if row.igst_amount:
             rate = (row.rate+(row.igst_amount/row.qty))
         if row.cgst_amount:
-            rate = (row.rate+(row.cgst_amount)/row.qty)
+            rate = (row.rate+(row.cgst_amount)*2/row.qty)
 
         si.append("items", {
             "item_code": row.item_code,
