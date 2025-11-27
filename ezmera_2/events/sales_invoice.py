@@ -17,9 +17,9 @@ def make_si(pr_name,customer):
         cost_center = frappe.db.get_value("Company", pr.company,"cost_center")
         rate = row.rate
         if row.igst_amount:
-            rate = (row.rate+row.igst_amount)
+            rate = (row.rate+(row.igst_amount/row.qty))
         if row.cgst_amount:
-            rate = (row.rate+row.cgst_amount)
+            rate = (row.rate+(row.cgst_amount)/row.qty)
 
         si.append("items", {
             "item_code": row.item_code,
