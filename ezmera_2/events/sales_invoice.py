@@ -28,7 +28,8 @@ def make_si(pr_name,customer):
             "rate":  rate* 1.01,
             "uom": row.uom,
             "income_account": income_account,
-            "cost_center": cost_center,            
+            "cost_center": cost_center,
+            "item_tax_template":row.item_tax_template
         })
     si.save()
     return si
