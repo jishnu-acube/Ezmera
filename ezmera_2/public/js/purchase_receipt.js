@@ -1,11 +1,9 @@
-
 frappe.ui.form.on("Purchase Receipt", {
     refresh(frm) {
         if (frm.doc.docstatus === 1) {
 
             frm.add_custom_button("Sales Invoice", () => {
 
-                // Create dialog
                 let d = new frappe.ui.Dialog({
                     title: "Select Customer",
                     fields: [
@@ -14,7 +12,14 @@ frappe.ui.form.on("Purchase Receipt", {
                             label: "Customer",
                             fieldname: "customer",
                             options: "Customer",
-                            reqd: 1
+                            reqd: 1,
+                            get_query() {
+                                return {
+                                    filters: {
+                                        is_internal_customer: 1   // show only internal customers
+                                    }
+                                };
+                            }
                         }
                     ],
                     primary_action_label: "Create Sales Invoice",
@@ -38,6 +43,28 @@ frappe.ui.form.on("Purchase Receipt", {
                 });
 
                 d.show();
+            });
+        }
+    
+     if (frm.doc.custom_delivery_only_items == 1 && frm.doc.is_internal_supplier == 0) {
+
+            frm.add_custom_button("Create Purchase Receipt", () => {
+
+                frappe.call({
+                    method: "ezmera_2.events.purchase_receipt.auto_make_pr",
+                    args: {
+                        source_pr: frm.doc.name
+                    },
+                    callback: function(r) {
+                        if (r.message) {
+                            // Sync unsaved document in local cache
+                            frappe.model.sync(r.message);
+                            // Redirect to form view (draft)
+                            frappe.set_route("Form", "Purchase Receipt", r.message.name);
+                        }
+                    }
+                });
+
             });
         }
     }

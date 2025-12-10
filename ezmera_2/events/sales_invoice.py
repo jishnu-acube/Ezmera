@@ -2,41 +2,42 @@ import frappe
 from frappe.model.mapper import get_mapped_doc
 from frappe.utils import  nowdate,flt
 from erpnext.accounts.doctype.sales_invoice.sales_invoice import (
-                    get_received_items,validate_inter_company_transaction,get_inter_company_details,
+					get_received_items,validate_inter_company_transaction,get_inter_company_details,
 					set_purchase_references,update_address,update_taxes)
 @frappe.whitelist()
 def make_si(pr_name,customer):
-    pr = frappe.get_doc("Purchase Receipt", pr_name)
+	pr = frappe.get_doc("Purchase Receipt", pr_name)
 
-    si = frappe.new_doc("Sales Invoice")
-    si.due_date = nowdate()
-    si.customer = customer
-    # remove taxes
-    si.ignore_pricing_rule = 1
-    si.taxes_and_charges = ""
-    # copy items manually
-    for row in pr.items:
-        income_account = frappe.db.get_value("Company", pr.company,"default_income_account")
-        cost_center = frappe.db.get_value("Company", pr.company,"cost_center")
-        rate = row.rate
-        if row.igst_amount:
-            rate = (row.rate+(row.igst_amount/row.qty))
-        if row.cgst_amount:
-            rate = (row.rate+(row.cgst_amount)*2/row.qty)
+	si = frappe.new_doc("Sales Invoice")
+	si.due_date = nowdate()
+	si.custom_purchase_receipt = pr.name
+	si.customer = customer
+	# remove taxes
+	si.ignore_pricing_rule = 1
+	si.taxes_and_charges = ""
+	# copy items manually
+	for row in pr.items:
+		income_account = frappe.db.get_value("Company", pr.company,"default_income_account")
+		cost_center = frappe.db.get_value("Company", pr.company,"cost_center")
+		rate = row.rate
+		if row.igst_amount:
+			rate = (row.rate+(row.igst_amount/row.qty))
+		if row.cgst_amount:
+			rate = (row.rate+(row.cgst_amount)*2/row.qty)
 
-        si.append("items", {
-            "item_code": row.item_code,
-            "item_name": row.item_name,
-            "qty": row.qty,
-            "rate":  rate* 1.01,
-            "uom": row.uom,
-            "income_account": income_account,
-            "cost_center": cost_center,
-            "item_tax_template":row.item_tax_template,
-            "custom_mrp":row.custom_new_mrp
-        })
-    si.save()
-    return si
+		si.append("items", {
+			"item_code": row.item_code,
+			"item_name": row.item_name,
+			"qty": row.qty,
+			"rate":  rate* 1.01,
+			"uom": row.uom,
+			"income_account": income_account,
+			"cost_center": cost_center,
+			"item_tax_template":row.item_tax_template,
+			"custom_mrp":row.custom_new_mrp
+		})
+	si.save()
+	return si
 
 
 
