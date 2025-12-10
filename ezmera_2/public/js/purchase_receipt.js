@@ -1,6 +1,11 @@
 frappe.ui.form.on("Purchase Receipt", {
     refresh(frm) {
-        if (frm.doc.docstatus === 1) {
+        if (
+            frm.doc.docstatus === 1 &&
+            frm.doc.custom_sales_status_ === "Not Sold" &&
+            frm.doc.is_internal_supplier == 0 &&
+            frm.doc.custom_delivery_only_items == 0
+        ) {
 
             frm.add_custom_button("Sales Invoice", () => {
 
