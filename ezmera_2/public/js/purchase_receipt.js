@@ -51,7 +51,7 @@ frappe.ui.form.on("Purchase Receipt", {
             });
         }
     
-     if (frm.doc.custom_delivery_only_items == 1 && frm.doc.is_internal_supplier == 0) {
+     if (frm.doc.custom_delivery_only_items == 1 && frm.doc.is_internal_supplier == 0 && frm.doc.docstatus === 1) {
 
             frm.add_custom_button("Create Purchase Receipt", () => {
 
@@ -62,10 +62,32 @@ frappe.ui.form.on("Purchase Receipt", {
                     },
                     callback: function(r) {
                         if (r.message) {
-                            // Sync unsaved document in local cache
+                           
                             frappe.model.sync(r.message);
-                            // Redirect to form view (draft)
+                        
                             frappe.set_route("Form", "Purchase Receipt", r.message.name);
+                        }
+                    }
+                });
+
+            });
+        }
+
+        if (frm.doc.custom_delivery_only_items == 1 && frm.doc.is_internal_supplier == 0 && frm.doc.docstatus === 1) {
+
+            frm.add_custom_button("Create DN", () => {
+
+                frappe.call({
+                    method: "ezmera_2.events.purchase_receipt.auto_make_delivery_note",
+                    args: {
+                        source_pr: frm.doc.name
+                    },
+                    callback: function(r) {
+                        if (r.message) {
+                           
+                            frappe.model.sync(r.message);
+                        
+                            frappe.set_route("Form", "Delivery Note", r.message.name);
                         }
                     }
                 });

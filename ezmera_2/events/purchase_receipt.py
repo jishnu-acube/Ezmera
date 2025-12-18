@@ -44,7 +44,7 @@ def auto_make_pr(source_pr):
         target_doc.taxes = []
         target_doc.ignore_default_taxes = 1
 
-        # Clear addresses
+        
         target_doc.supplier_address = None
         target_doc.contact_person = None
         target_doc.billing_address = None
@@ -61,6 +61,19 @@ def auto_make_pr(source_pr):
                 item.rate = item.rate * 1.01
                 item.amount = item.rate * item.qty
 
+
+      
+        if hasattr(target_doc, "selling_price"):
+            for row in target_doc.selling_price:
+               
+                if row.item:
+                    row.selling_price = row.selling_price 
+                    row.item = row.item
+                    row.price_list = row.price_list
+
+             
+
+
             # Clear item tax template
             item.item_tax_template = None
 
@@ -73,9 +86,73 @@ def auto_make_pr(source_pr):
         source_pr,
         {
             "Purchase Receipt": {"doctype": "Purchase Receipt"},
-            "Purchase Receipt Item": {"doctype": "Purchase Receipt Item"}
+            "Purchase Receipt Item": {"doctype": "Purchase Receipt Item"},
+            "Selling Price Table": {"doctype": "Selling Price Table"}
         },
         postprocess=update_items
     )
 
     return target_doc
+
+import frappe
+from frappe.model.mapper import get_mapped_doc
+from frappe.utils import today, flt
+
+
+@frappe.whitelist()
+def auto_make_delivery_note(source_pr):
+    """
+    Create Delivery Note from Purchase Receipt
+    Store PR rate in custom_pr_rate
+    DN rate = PR rate + 1%
+    """
+
+    source_doc = frappe.get_doc("Purchase Receipt", source_pr)
+
+    master = frappe.get_doc("Master Settings")
+    if not master.default_internal_customer:
+        frappe.throw("Set Default Internal Customer in Master Settings")
+
+    customer = master.default_internal_customer
+    company = source_doc.company
+
+    def update_items(source_doc, target_doc):
+
+        target_doc.customer = customer
+        target_doc.company = company
+        target_doc.posting_date = today()
+
+        target_doc.ignore_pricing_rule = 1
+        target_doc.ignore_default_taxes = 1
+        target_doc.taxes = []
+
+        for item in target_doc.items:
+            if not item.purchase_receipt_item:
+                continue
+
+            pr_item = frappe.get_doc(
+                "Purchase Receipt Item", item.purchase_receipt_item
+            )
+
+            # STORE PR RATE
+            item.custom_pr_rate = flt(pr_item.rate , 2)
+            item.qty = pr_item.qty
+
+        target_doc.run_method("set_missing_values")
+
+    dn = get_mapped_doc(
+        "Purchase Receipt",
+        source_pr,
+        {
+            "Purchase Receipt": {"doctype": "Delivery Note"},
+            "Purchase Receipt Item": {
+                "doctype": "Delivery Note Item",
+                "field_map": {
+                    "name": "purchase_receipt_item",
+                },
+            },
+        },
+        postprocess=update_items,
+    )
+
+    return dn

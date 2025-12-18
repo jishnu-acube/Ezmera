@@ -12,6 +12,7 @@ def make_si(pr_name,customer):
 	si.due_date = nowdate()
 	si.custom_purchase_receipt = pr.name
 	si.customer = customer
+	si.update_stock = 1
 	# remove taxes
 	si.ignore_pricing_rule = 1
 	si.taxes_and_charges = ""
@@ -34,7 +35,7 @@ def make_si(pr_name,customer):
 			"income_account": income_account,
 			"cost_center": cost_center,
 			"item_tax_template":row.item_tax_template,
-			"custom_mrp":row.custom_new_mrp
+			"custom_mrp":row.custom_new_mrp or row.custom_previous_mrp
 		})
 	si.save()
 	
