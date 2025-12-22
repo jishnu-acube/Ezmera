@@ -119,12 +119,18 @@ def auto_make_delivery_note(source_pr):
     def update_items(source_doc, target_doc):
 
         target_doc.customer = customer
+        target_doc.contact_person = ""
+        target_doc.place_of_supply = ""
+        target_doc.gst_category = "Unregistered"
+        target_doc.address_display = ""
         target_doc.company = company
         target_doc.posting_date = today()
 
         target_doc.ignore_pricing_rule = 1
         target_doc.ignore_default_taxes = 1
         target_doc.taxes = []
+        target_doc.taxes_and_charges = ""
+
 
         for item in target_doc.items:
             if not item.purchase_receipt_item:
@@ -156,3 +162,4 @@ def auto_make_delivery_note(source_pr):
     )
 
     return dn
+
